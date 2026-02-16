@@ -1,56 +1,51 @@
 #!/usr/bin/python3
 """
-Exports all employees' TODO list data to a JSON file.
-File: todo_all_employees.json
-"""
+3-dictionary_of_list_of_dictionaries.py
 
+Exports all tasks from all employees to JSON in the exact format:
+{
+  "USER_ID": [
+    {"username": "USERNAME", "task": "TASK_TITLE",
+     "completed": TASK_COMPLETED_STATUS},
+    ...
+  ],
+  "USER_ID": [...]
+}
+File name: todo_all_employees.json
+"""
 import json
 import requests
 
 
-def fetch_all_employees():
-    """Fetch all employees from the API."""
-    url = "https://jsonplaceholder.typicode.com/users"
-    response = requests.get(url)
-    if response.status_code != 200:
-        return []
-    return response.json()
-
-
-def fetch_employee_todos(employee_id):
-    """Fetch all TODO tasks for a given employee."""
-    url = "https://jsonplaceholder.typicode.com/todos"
-    response = requests.get(url, params={"userId": employee_id})
-    if response.status_code != 200:
-        return []
-    return response.json()
-
-
-def export_all_to_json():
-    """Fetch all employees and their tasks, export to JSON file."""
-    all_employees = fetch_all_employees()
-    data = {}
-
-    for employee in all_employees:
-        user_id = str(employee.get("id"))
-        username = employee.get("username")
-        todos = fetch_employee_todos(employee.get("id"))
-
-        data[user_id] = []
-        for task in todos:
-            data[user_id].append({
-                "username": username,
-                "task": task.get("title"),
-                "completed": task.get("completed")
-            })
-
-    with open("todo_all_employees.json", "w") as json_file:
-        json.dump(data, json_file)
-
-
 def main():
-    """Main program entry point."""
-    export_all_to_json()
+    base = "https://jsonplaceholder.typicode.com"
+
+    users_resp = requests.get(f"{base}/users")
+    todos_resp = requests.get(f"{base}/todos")
+    if users_resp.status_code != 200 or todos_resp.status_code != 200:
+        raise SystemExit(1)
+
+    users = users_resp.json()
+    todos = todos_resp.json()
+
+    user_map = {user.get("id"): user.get("username") for user in users}
+
+    result = {}
+    for uid in user_map:
+        result[str(uid)] = []
+
+    for todo in todos:
+        uid = todo.get("userId")
+        result[str(uid)].append(
+            {
+                "username": user_map.get(uid),
+                "task": todo.get("title"),
+                "completed": todo.get("completed"),
+            }
+        )
+
+    with open("todo_all_employees.json", "w", encoding="utf-8") as fobj:
+        json.dump(result, fobj)
 
 
 if __name__ == "__main__":

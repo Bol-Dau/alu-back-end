@@ -1,57 +1,52 @@
 #!/usr/bin/python3
 """
-Exports employee TODO list progress to a CSV file
+1-export_to_CSV.py
+
+Exports all tasks for a given employee ID to CSV in the exact format:
+"USER_ID","USERNAME","TASK_COMPLETED_STATUS","TASK_TITLE"
+File name: USER_ID.csv
 """
-import requests
 import csv
+import requests
 import sys
 
 
-def fetch_employee_data(employee_id):
-    """Fetch employee data from the REST API."""
-    url = "https://jsonplaceholder.typicode.com/users/{}".format(employee_id)
-    response = requests.get(url)
-    return response.json()
-
-
-def fetch_employee_todos(employee_id):
-    """Fetch TODO list for the given employee."""
-    url = "https://jsonplaceholder.typicode.com/todos"
-    response = requests.get(url, params={"userId": employee_id})
-    return response.json()
-
-
-def export_to_csv(employee_id, username, todos):
-    """Export employee TODOs to a CSV file."""
-    filename = "{}.csv".format(employee_id)
-    with open(filename, mode="w", newline="") as csv_file:
-        writer = csv.writer(csv_file, quoting=csv.QUOTE_ALL)
-        for task in todos:
-            writer.writerow([
-                employee_id,
-                username,
-                task.get("completed"),
-                task.get("title")
-            ])
-
-
 def main():
-    """Main function."""
     if len(sys.argv) != 2:
-        print("Usage: ./1-export_to_CSV.py EMPLOYEE_ID")
+        print(f"Usage: {sys.argv[0]} EMPLOYEE_ID", file=sys.stderr)
         sys.exit(1)
 
     try:
         employee_id = int(sys.argv[1])
     except ValueError:
-        print("EMPLOYEE_ID must be an integer")
+        print("EMPLOYEE_ID must be an integer", file=sys.stderr)
         sys.exit(1)
 
-    employee = fetch_employee_data(employee_id)
-    todos = fetch_employee_todos(employee_id)
-    username = employee.get("username")
+    base = "https://jsonplaceholder.typicode.com"
 
-    export_to_csv(employee_id, username, todos)
+    user_resp = requests.get(f"{base}/users/{employee_id}")
+    if user_resp.status_code != 200:
+        sys.exit(1)
+    user = user_resp.json()
+    username = user.get("username")
+
+    todos_resp = requests.get(f"{base}/todos", params={"userId": employee_id})
+    if todos_resp.status_code != 200:
+        sys.exit(1)
+    todos = todos_resp.json()
+
+    filename = f"{employee_id}.csv"
+    with open(filename, "w", newline="", encoding="utf-8") as fobj:
+        writer = csv.writer(fobj, quoting=csv.QUOTE_ALL)
+        for todo in todos:
+            writer.writerow(
+                [
+                    employee_id,
+                    username,
+                    todo.get("completed"),
+                    todo.get("title"),
+                ]
+            )
 
 
 if __name__ == "__main__":
