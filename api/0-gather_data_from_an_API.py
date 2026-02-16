@@ -1,15 +1,17 @@
 #!/usr/bin/python3
 """
 0-gather_data_from_an_API.py
-Fetches and displays TODO list progress for a given employee ID
-from JSONPlaceholder (https://jsonplaceholder.typicode.com).
+
+Fetches and displays TODO list progress for a given employee ID from
+JSONPlaceholder (https://jsonplaceholder.typicode.com).
+
 Requirements:
 - Uses requests
 - Takes an integer employee ID as argument
 - Prints in the exact specified format
 """
-import sys
 import requests
+import sys
 
 
 def main():
@@ -40,9 +42,15 @@ def main():
 
     completed = [t for t in todos if t.get("completed") is True]
 
-    print(f"Employee {employee_name} is done with tasks({len(completed)}/{len(todos)}):")
+    header = (
+        f"Employee {employee_name} is done with tasks"
+        f"({len(completed)}/{len(todos)}):"
+    )
+    print(header)
+
     for task in completed:
-        print("\t {}".format(task.get("title")))
+        title = task.get("title")
+        print("\t {}".format(title))
 
 
 if __name__ == "__main__":
